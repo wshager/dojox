@@ -1,5 +1,5 @@
-define(["dojo/_base/lang", "dojo/_base/array"], 
-  function(lang, array) {
+define(["dojo/_base/lang","dojo/_base/window", "dojo/_base/array"], 
+  function(lang, win, array) {
 
 var css = lang.getObject("dojox.data.css",true) 
 
@@ -55,13 +55,19 @@ css.findStyleSheet = function(sheet){
 			return true;
 		}
 		if(styleSheet.imports){
-			return array.some(styleSheet.imports, function(importedSS){ //IE stylesheet has imports[] containing @import'ed rules
+			return array.some(styleSheet.imports,function(importedSS){ //IE stylesheet has imports[] containing @import'ed rules
 				//console.debug("Processing IE @import rule",importedSS);
 				return _processSS(importedSS);
 			});
 		}
 		//iterate across rules in the stylesheet
-		return array.some(styleSheet[styleSheet.cssRules?"cssRules":"rules"], function(rule){
+		var rules = [];
+		try {
+			rules = styleSheet[styleSheet.cssRules?"cssRules":"rules"];
+		} catch(err) {
+			console.warn("Not allowed to read cssRules for stylesheet "+styleSheet.href);
+		}
+		return array.some(rules,function(rule){
 			if(rule.type && rule.type === 3 && _processSS(rule.styleSheet)){// CSSImportRule (firefox)
 				//sheetObjects.push(styleSheet);
 				return true;
@@ -69,7 +75,11 @@ css.findStyleSheet = function(sheet){
 			return false;
 		});
 	};
-	array.some(document.styleSheets, _processSS);
+	var ss = [];
+	for(var k in win.global.document.styleSheets) {
+		if(!isNaN(parseInt(k))) ss.push(win.global.document.styleSheets[k]);
+	}
+	array.some(ss,_processSS);
 	return sheetObjects;
 };
 
@@ -80,7 +90,7 @@ css.determineContext = function(initialStylesheets){
 	if(initialStylesheets && initialStylesheets.length > 0){
 		initialStylesheets = css.findStyleSheets(initialStylesheets);
 	}else{
-		initialStylesheets = document.styleSheets;
+		initialStylesheets = win.global.document.styleSheets;
 	}
 	var _processSS = function(styleSheet){
 		ret.push(styleSheet);
@@ -91,7 +101,13 @@ css.determineContext = function(initialStylesheets){
 			});
 		}
 		//iterate across rules in the stylesheet
-		array.forEach(styleSheet[styleSheet.cssRules?"cssRules":"rules"], function(rule){
+		var rules = [];
+		try {
+			rules = styleSheet[styleSheet.cssRules?"cssRules":"rules"];
+		} catch(err) {
+			console.warn("Not allowed to read cssRules for stylesheet "+styleSheet.href);
+		}
+		array.forEach(rules, function(rule){
 			if(rule.type && rule.type === 3){// CSSImportRule (firefox)
 				_processSS(rule.styleSheet);
 			}
