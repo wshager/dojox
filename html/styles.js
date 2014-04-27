@@ -287,7 +287,7 @@ define(["dojo/_base/lang", "dojo/_base/array", "dojo/_base/window", "dojo/_base/
 				pageStyleSheets[name].id = s.ownerNode.id;
 				var rules = [];
 				try {
-					rules = styleSheet[s.cssRules?"cssRules":"rules"];
+					rules = s[s.cssRules?"cssRules":"rules"];
 				} catch(err) {
 					// TODO warn?
 				}
